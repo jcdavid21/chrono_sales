@@ -50,12 +50,33 @@ function setTopbarDate() {
 
 // ── Metric Cards ─────────────────────────────────────────────
 function renderMetrics(metrics) {
+    const { date_from, date_to } = dashGetDateRange();
+    const today = new Date().toISOString().slice(0, 10);
+    const isDefaultMonth =
+        date_from === new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10) &&
+        date_to   === today;
+
+    // Today card — label stays "Today's Revenue" but value is 0 if out of range
     setText('valToday', fmtK(metrics.today.revenue));
     setText('subToday', metrics.today.tx + ' transactions');
 
+    // Week card — relabel if filtered
+    const weekLabel = document.querySelector('#cardWeek .metric-label');
+    if (weekLabel) {
+        weekLabel.innerHTML = isDefaultMonth
+            ? '<i class="fa-regular fa-calendar-week"></i> This Week'
+            : '<i class="fa-regular fa-calendar-week"></i> This Week (in range)';
+    }
     setText('valWeek', fmtK(metrics.week.revenue));
     setText('subWeek', metrics.week.tx + ' transactions');
 
+    // Month card — relabel to "Selected Period" when a custom range is applied
+    const monthLabel = document.querySelector('#cardMonth .metric-label');
+    if (monthLabel) {
+        monthLabel.innerHTML = isDefaultMonth
+            ? '<i class="fa-regular fa-calendar"></i> This Month'
+            : '<i class="fa-regular fa-calendar"></i> Selected Period';
+    }
     setText('valMonth', fmtK(metrics.month.revenue));
 
     const mom   = metrics.mom_change_pct;
@@ -65,10 +86,17 @@ function renderMetrics(metrics) {
         ? '<i class="fa-solid fa-arrow-trend-up"></i> +' + mom
         : mom < 0
         ? '<i class="fa-solid fa-arrow-trend-down"></i> ' + mom
-        : '— ' + mom) + '% MoM';
+        : '— ' + mom) + '% vs prior period';
     const subMonth = document.getElementById('subMonth');
     if (subMonth) { subMonth.innerHTML = ''; subMonth.appendChild(badge); }
 
+    // Avg ticket — based on selected period
+    const avgLabel = document.querySelector('#cardAvg .metric-label');
+    if (avgLabel) {
+        avgLabel.innerHTML = isDefaultMonth
+            ? '<i class="fa-solid fa-receipt"></i> Avg Ticket (Month)'
+            : '<i class="fa-solid fa-receipt"></i> Avg Ticket (Period)';
+    }
     const avgTicket = metrics.month.tx > 0 ? metrics.month.revenue / metrics.month.tx : 0;
     setText('valAvg', fmtK(avgTicket));
     setText('subAvg', 'per transaction');
@@ -561,22 +589,61 @@ function buildFilters() {
     }
 }
 
+// ── Date filter helpers ──────────────────────────────────────
+function dashResetDates() {
+    const today = new Date();
+    const from  = new Date(today.getFullYear(), today.getMonth(), 1);
+    document.getElementById('dashDateFrom').value = from.toISOString().slice(0, 10);
+    document.getElementById('dashDateTo').value   = today.toISOString().slice(0, 10);
+}
+
+function dashGetDateRange() {
+    return {
+        date_from: document.getElementById('dashDateFrom').value,
+        date_to:   document.getElementById('dashDateTo').value,
+    };
+}
+
 // ── Main fetch & render ──────────────────────────────────────
 async function loadDashboard() {
     const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.remove('hidden');
+
+    const { date_from, date_to } = dashGetDateRange();
 
     try {
-        const res  = await fetch(`${API_PROXY}?endpoint=dashboard`);
+        const res  = await fetch(`${API_PROXY}?endpoint=dashboard&preset=custom&date_from=${date_from}&date_to=${date_to}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         _data = await res.json();
 
         renderMetrics(_data.metrics);
         renderSparkline(_data.sparkline);
+
+        // Update sparkline chart title to reflect the active range
+        const sparklineTitle = document.querySelector('#sparklineChart')
+            ?.closest('.chart-card')
+            ?.querySelector('.chart-card-title');
+        if (sparklineTitle) {
+            sparklineTitle.innerHTML = `<i class="fa-solid fa-chart-area"></i> Sales Trend — ${date_from} to ${date_to}`;
+        }
+
+        // Update branch chart title
+        const branchTitle = document.querySelector('#branchChart')
+            ?.closest('.chart-card')
+            ?.querySelector('.chart-card-title');
+        if (branchTitle) {
+            branchTitle.innerHTML = `<i class="fa-solid fa-code-branch"></i> Top Branches — ${date_from} to ${date_to}`;
+        }
+
+
         renderPaymentChart(_data.payment_breakdown);
         renderBranchChart(_data.top_branches);
         renderTxTrendChart(_data.tx_trend);
         renderForecastAlert(_data.forecast_alert);
         renderShapBars(_data.forecast_alert?.shap_features ?? []);
+
+        const label = document.getElementById('dashPeriodLabel');
+        if (label) label.textContent = `${date_from} → ${date_to}`;
 
     } catch (err) {
         console.error('Dashboard load error:', err);
@@ -592,14 +659,21 @@ async function loadDashboard() {
 // ── Init ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     setTopbarDate();
+    dashResetDates();   // set default date range on load
     buildFilters();
     loadDashboard();
 
+    // Date filter buttons
+    document.getElementById('dashApplyBtn')?.addEventListener('click', () => loadDashboard());
+    document.getElementById('dashResetBtn')?.addEventListener('click', () => {
+        dashResetDates();
+        loadDashboard();
+    });
+
+    // Refresh button
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', () => {
-            const overlay = document.getElementById('loadingOverlay');
-            if (overlay) overlay.classList.remove('hidden');
             const icon = refreshBtn.querySelector('i');
             if (icon) {
                 icon.style.animation = 'spin 0.8s linear infinite';

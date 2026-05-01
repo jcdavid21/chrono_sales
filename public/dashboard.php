@@ -75,6 +75,21 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Admin');
                 </div>
             </div>
 
+            <!-- Date filter bar -->
+            <div class="bp-filter-bar" id="dashDateFilterBar">
+                <label for="dashDateFrom">From</label>
+                <input type="date" id="dashDateFrom" class="bp-date-input">
+                <label for="dashDateTo">To</label>
+                <input type="date" id="dashDateTo" class="bp-date-input">
+                <button class="btn-primary" id="dashApplyBtn">
+                    <i class="fa-solid fa-filter"></i> Apply
+                </button>
+                <button class="btn-secondary" id="dashResetBtn">
+                    <i class="fa-solid fa-rotate-left"></i> This Month
+                </button>
+                <span id="dashPeriodLabel" style="font-size:11.5px;color:var(--ink-4);margin-left:4px;"></span>
+            </div>
+
             <!-- Metric cards -->
             <div class="metrics-grid">
                 <div class="metric-card" id="cardToday">

@@ -11,7 +11,7 @@ $allowed = [
     'dashboard', 'sales-analytics', 'forecast',
     'branch-performance', 'payment-insights',
     'customer-insights', 'reports', 'settings',
-    'data-management'
+    'data-management', 'ml-training'
 ];
 
 if (!in_array($page, $allowed)) $page = 'dashboard';

@@ -331,33 +331,34 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Admin');
 <script src="../assets/js/sidebar.js"></script>
 <script src="../assets/js/analytics.js"></script>
 
-<!-- REPLACE the entire inline <script> block at the bottom WITH: -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const _orig = window.renderAll;
-    window.renderAll = function(data) {
-        _orig(data);
+    // Patch renderAll AFTER analytics.js has loaded, using a post-render hook
+    const _origRenderAll = renderAll;
 
-        // ── Top Branch ────────────────────────────────────────────
+    window.renderAll = function(data) {
+        _origRenderAll(data);
+
+        // ── Top Branch
         const topBranch = data.branch_revenue?.[0];
         if (topBranch) {
             document.getElementById('insightTopBranch').textContent    = topBranch.name;
             document.getElementById('insightTopBranchRev').textContent = '₱' + Number(topBranch.revenue).toLocaleString('en-PH', { minimumFractionDigits: 0 });
         }
 
-        // ── Top Customer ──────────────────────────────────────────
+        // ── Top Customer
         const topCust = data.top_customers?.[0];
         if (topCust) {
             document.getElementById('insightTopCustomer').textContent      = topCust.name;
             document.getElementById('insightTopCustomerSpent').textContent = '₱' + Number(topCust.total_spent).toLocaleString('en-PH', { minimumFractionDigits: 0 }) + ' · ' + topCust.tx_count + ' txns';
         }
 
-        // ── Top Payment ───────────────────────────────────────────
-        const payments  = data.payment_breakdown ?? [];
-        const topPay    = payments[0];
+        // ── Top Payment
+        const payments = data.payment_breakdown ?? [];
+        const topPay   = payments[0];
         if (topPay) {
-            const totalRev  = payments.reduce((s, p) => s + p.revenue, 0);
-            const pct       = totalRev > 0 ? ((topPay.revenue / totalRev) * 100).toFixed(1) : '0';
+            const totalRev = payments.reduce((s, p) => s + p.revenue, 0);
+            const pct      = totalRev > 0 ? ((topPay.revenue / totalRev) * 100).toFixed(1) : '0';
             document.getElementById('insightTopPayment').textContent    = topPay.method;
             document.getElementById('insightTopPaymentPct').textContent = pct + '% of revenue · ' + topPay.tx_count.toLocaleString() + ' txns';
         }
