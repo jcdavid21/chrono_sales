@@ -209,7 +209,7 @@
     padding: 20px 22px;
     box-shadow: var(--card-shadow);
 }
-.chart-card.wide   { flex: 2; }
+.chart-card.wide   { flex: 1; }
 .chart-card.narrow { flex: 1; min-width: 0; }
 .chart-card.full   { width: 100%; margin-bottom: 20px; }
 

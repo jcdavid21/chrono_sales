@@ -6,19 +6,9 @@ payments_bp = Blueprint('payments', __name__)
 
 @payments_bp.route("/api/branch-performance")
 def branch_performance():
-    """
-    Returns all data needed by branch-performance.php:
-      - Branch comparison table (revenue, tx_count, avg_ticket, vat, total_discount)
-      - Revenue share (for donut chart)
-      - Discount vs grand_total per branch (for bar chart)
-      - Month-over-month growth per branch
-      - 30-day trend per branch (for decline flagging)
-    Query params: preset, date_from, date_to (same as /api/analytics)
-    """
     date_from, date_to = parse_date_params(request)
-    today = date.today()
 
-    # ── 1. Branch summary table ───────────────────────────────────────────────
+    # ── 1. Branch summary for the selected date range ─────────────────────────
     branch_summary = q("""
         SELECT
             b.branch_id,
@@ -39,34 +29,34 @@ def branch_performance():
         ORDER BY total_revenue DESC
     """, {"date_from": date_from, "date_to": date_to})
 
-    # ── 2. Month-over-month growth ────────────────────────────────────────────
-    cur_month_start  = today.replace(day=1)
-    prev_month_end   = cur_month_start - timedelta(days=1)
-    prev_month_start = prev_month_end.replace(day=1)
+    # ── 2. MoM growth: compare selected period vs same-length prior period ────
+    period_days  = max((date_to - date_from).days + 1, 1)   # +1: inclusive day count
+    prior_to     = date_from - timedelta(days=1)
+    prior_from   = prior_to  - timedelta(days=period_days - 1)
 
-    cur_month_rev = q("""
+    cur_rev_rows = q("""
         SELECT branch_id, COALESCE(SUM(grand_total), 0) AS revenue
         FROM transactions
         WHERE DATE(transaction_date) >= %s
           AND DATE(transaction_date) <= %s
           AND transaction_status = 'OK'
         GROUP BY branch_id
-    """, (cur_month_start, today))
+    """, (date_from, date_to))
 
-    prev_month_rev = q("""
+    prev_rev_rows = q("""
         SELECT branch_id, COALESCE(SUM(grand_total), 0) AS revenue
         FROM transactions
         WHERE DATE(transaction_date) >= %s
           AND DATE(transaction_date) <= %s
           AND transaction_status = 'OK'
         GROUP BY branch_id
-    """, (prev_month_start, prev_month_end))
+    """, (prior_from, prior_to))
 
-    cur_map  = {r["branch_id"]: safe_float(r["revenue"]) for r in cur_month_rev}
-    prev_map = {r["branch_id"]: safe_float(r["revenue"]) for r in prev_month_rev}
+    cur_map  = {r["branch_id"]: safe_float(r["revenue"]) for r in cur_rev_rows}
+    prev_map = {r["branch_id"]: safe_float(r["revenue"]) for r in prev_rev_rows}
 
-    # ── 3. 30-day daily trend per branch (for decline flagging) ──────────────
-    thirty_days_ago = today - timedelta(days=29)
+    # ── 3. 30-day daily trend anchored to the selected date range ────────────
+    trend_start = date_to - timedelta(days=29)
     trend_rows = q("""
         SELECT
             branch_id,
@@ -74,12 +64,12 @@ def branch_performance():
             COALESCE(SUM(grand_total), 0) AS revenue
         FROM transactions
         WHERE DATE(transaction_date) >= %s
+          AND DATE(transaction_date) <= %s
           AND transaction_status = 'OK'
         GROUP BY branch_id, DATE(transaction_date)
         ORDER BY branch_id, day
-    """, (thirty_days_ago,))
+    """, (trend_start, date_to))
 
-    # Group trend by branch
     trend_map = {}
     for r in trend_rows:
         bid = r["branch_id"]
@@ -87,27 +77,26 @@ def branch_performance():
             trend_map[bid] = []
         trend_map[bid].append({"date": str(r["day"]), "revenue": safe_float(r["revenue"])})
 
-    # ── 4. Assemble branches payload ──────────────────────────────────────────
+    # ── 4. Assemble payload ───────────────────────────────────────────────────
     total_revenue_all = sum(safe_float(r["total_revenue"]) for r in branch_summary)
 
     branches_out = []
     for r in branch_summary:
-        bid        = r["branch_id"]
-        cur_rev    = cur_map.get(bid, 0.0)
-        prev_rev   = prev_map.get(bid, 0.0)
-        mom_pct    = round(((cur_rev - prev_rev) / prev_rev * 100), 1) if prev_rev else 0.0
-        rev_share  = round((safe_float(r["total_revenue"]) / total_revenue_all * 100), 2) if total_revenue_all else 0.0
+        bid       = r["branch_id"]
+        cur_rev   = cur_map.get(bid, 0.0)
+        prev_rev  = prev_map.get(bid, 0.0)
+        mom_pct   = round(((cur_rev - prev_rev) / prev_rev * 100), 1) if prev_rev else None
+        rev_share = round((safe_float(r["total_revenue"]) / total_revenue_all * 100), 2) if total_revenue_all else 0.0
 
-        # Decline flag: compare last 15 days avg vs prior 15 days avg
-        trend = trend_map.get(bid, [])
+        trend     = trend_map.get(bid, [])
         declining = False
         if len(trend) >= 10:
-            mid        = len(trend) // 2
-            first_half = [d["revenue"] for d in trend[:mid]]
-            second_half= [d["revenue"] for d in trend[mid:]]
-            avg_first  = sum(first_half) / len(first_half) if first_half else 0
-            avg_second = sum(second_half) / len(second_half) if second_half else 0
-            declining  = avg_second < avg_first * 0.90  # >10% decline
+            mid         = len(trend) // 2
+            first_half  = [d["revenue"] for d in trend[:mid]]
+            second_half = [d["revenue"] for d in trend[mid:]]
+            avg_first   = sum(first_half)  / len(first_half)  if first_half  else 0
+            avg_second  = sum(second_half) / len(second_half) if second_half else 0
+            declining   = avg_second < avg_first * 0.90
 
         branches_out.append({
             "branch_id":      bid,
@@ -124,8 +113,8 @@ def branch_performance():
         })
 
     return jsonify({
-        "date_range": {"from": str(date_from), "to": str(date_to)},
-        "branches":   branches_out,
+        "date_range":    {"from": str(date_from), "to": str(date_to)},
+        "branches":      branches_out,
         "total_revenue": total_revenue_all,
     })
 

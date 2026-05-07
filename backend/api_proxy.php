@@ -1,4 +1,3 @@
-
 <?php
 
 session_start();
@@ -16,7 +15,9 @@ $ALLOWED = [
     'health'                 => ['path' => '/api/health',                'csv' => false, 'methods' => ['GET']],
     'analytics'              => ['path' => '/api/analytics',             'csv' => false, 'methods' => ['GET']],
     'analytics/filters'      => ['path' => '/api/analytics/filters',     'csv' => false, 'methods' => ['GET']],
-    'analytics/export/csv'   => ['path' => '/api/analytics/export/csv',  'csv' => true,  'methods' => ['GET']],
+    'analytics/export/csv'      => ['path' => '/api/analytics/export/csv',      'csv' => true,  'methods' => ['GET']],
+    'analytics-lstm-forecast'   => ['path' => '/api/analytics/lstm-forecast',   'csv' => false, 'methods' => ['GET']],
+    'analytics-discount-impact' => ['path' => '/api/analytics/discount-impact', 'csv' => false, 'methods' => ['GET']],
 
     // Payment Insights
     'payment-insights'         => ['path' => '/api/payment-insights',         'csv' => false, 'methods' => ['GET']],
@@ -52,10 +53,17 @@ $ALLOWED = [
     'dm/branches/import'      => ['path' => '/api/dm/branches/import',      'csv' => false, 'methods' => ['POST']],
     'dm/branches/bulk-delete' => ['path' => '/api/dm/branches/bulk-delete', 'csv' => false, 'methods' => ['POST']],
 
-    // ML Training
-    'ml/upload-csv' => ['path' => '/api/ml/upload-csv', 'csv' => false, 'methods' => ['POST']],
-    'ml/train'      => ['path' => '/api/ml/train',      'csv' => false, 'methods' => ['POST']],
-    'ml/cancel'     => ['path' => '/api/ml/cancel',     'csv' => false, 'methods' => ['POST']],
+   // Dataset CSV Upload (transactions normalisation)
+    'dm/dataset/preview' => ['path' => '/api/dm/dataset/preview', 'csv' => false, 'methods' => ['POST']],
+    'dm/dataset/import'  => ['path' => '/api/dm/dataset/import',  'csv' => false, 'methods' => ['POST']],
+
+   // ML Training
+    'ml/upload-csv'    => ['path' => '/api/ml/upload-csv',    'csv' => false, 'methods' => ['POST']],
+    'ml/train'         => ['path' => '/api/ml/train',         'csv' => false, 'methods' => ['POST']],
+    'ml/preview-db'    => ['path' => '/api/ml/preview-db',    'csv' => false, 'methods' => ['GET']],
+    'ml/registry'      => ['path' => '/api/ml/registry',      'csv' => false, 'methods' => ['GET']],
+    'ml/compare-runs'  => ['path' => '/api/ml/compare-runs',  'csv' => false, 'methods' => ['GET']],
+    'ml/cancel'        => ['path' => '/api/ml/cancel',        'csv' => false, 'methods' => ['POST']],
 
     // ── Reports Module ────────────────────────────────────────────────────────
     'reports/filters'             => ['path' => '/api/reports/filters',             'csv' => false, 'methods' => ['GET']],
@@ -78,10 +86,11 @@ if (!array_key_exists($endpoint, $ALLOWED)) {
         $config = ['path' => '/api/ml/stream/' . $m[1], 'csv' => false, 'methods' => ['GET'], 'stream' => true];
     } elseif (preg_match('#^ml/cancel/([a-f0-9\-]{36})$#', $endpoint, $m)) {
         $config = ['path' => '/api/ml/cancel/' . $m[1], 'csv' => false, 'methods' => ['POST'], 'stream' => false];
+    } elseif (preg_match('#^ml/registry/(\d+)/toggle$#', $endpoint, $m)) {
+        $config = ['path' => '/api/ml/registry/' . $m[1] . '/toggle', 'csv' => false, 'methods' => ['POST'], 'stream' => false];
     } elseif (preg_match('#^branch-performance/(\d+)/transactions$#', $endpoint, $m)) {
         $config = ['path' => '/api/branch-performance/' . $m[1] . '/transactions', 'csv' => false, 'methods' => ['GET'], 'stream' => false];
     } elseif (preg_match('#^reports/schedules/(\d+)$#', $endpoint, $m)) {
-        // PUT (update) and DELETE for individual schedule records
         $config = ['path' => '/api/reports/schedules/' . $m[1], 'csv' => false, 'methods' => ['GET','PUT','DELETE'], 'stream' => false];
     } else {
         http_response_code(400);
@@ -124,16 +133,30 @@ if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'])) {
     $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
     if (strpos($contentType, 'multipart/form-data') !== false) {
         if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+            // Derive MIME from extension so xlsx/csv are always correct
+            $origName = $_FILES['file']['name'];
+            $ext      = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+            $mimeMap  = [
+                'csv'  => 'text/csv',
+                'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'xls'  => 'application/vnd.ms-excel',
+            ];
+            $mime = $mimeMap[$ext] ?? ($_FILES['file']['type'] ?: 'application/octet-stream');
+
+            // Dataset imports can be large — allow up to 120 s
+            $isDataset = in_array($endpoint, ['dm/dataset/preview', 'dm/dataset/import']);
+            $timeout   = $isDataset ? 120 : 15;
+
             $ch = curl_init($flaskUrl);
             curl_setopt_array($ch, [
                 CURLOPT_CUSTOMREQUEST  => $method,
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT        => 15,
+                CURLOPT_TIMEOUT        => $timeout,
                 CURLOPT_POSTFIELDS     => [
                     'file' => new CURLFile(
                         $_FILES['file']['tmp_name'],
-                        $_FILES['file']['type'] ?: 'text/csv',
-                        $_FILES['file']['name']
+                        $mime,
+                        $origName
                     ),
                 ],
             ]);

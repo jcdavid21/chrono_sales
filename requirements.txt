@@ -4,3 +4,10 @@ mysql-connector-python
 numpy
 scikit-learn
 shap
+openpyxl
+xgboost
+lightgbm
+statsmodels
+tensorflow
+keras
+joblib

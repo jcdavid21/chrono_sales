@@ -129,6 +129,15 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Admin');
                         </div>
                     </div>
 
+                    <div class="filter-group">
+                        <label class="filter-label" for="forecastCI">Forecast CI</label>
+                        <select class="filter-select" id="forecastCI">
+                            <option value="50">50%</option>
+                            <option value="80" selected>80%</option>
+                            <option value="95">95%</option>
+                        </select>
+                    </div>
+
                     <div class="filter-group" style="align-self:flex-end;">
                         <button class="filter-apply-btn" id="applyFilterBtn">
                             <i class="fa-solid fa-magnifying-glass" style="margin-right:5px;"></i> Apply Filters
@@ -136,6 +145,12 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Admin');
                     </div>
 
                 </div>
+            </div>
+
+            <!-- ══ ML INSIGHT SENTENCE ══════════════════════════════════ -->
+            <div id="mlInsightBlock" style="display:none;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:14px 18px;margin-bottom:12px;font-size:13px;color:#4c1d95;line-height:1.6;">
+                <i class="fa-solid fa-wand-magic-sparkles" style="margin-right:6px;color:#7c3aed;"></i>
+                <span id="mlInsightText">—</span>
             </div>
 
             <!-- ══ EXPORT BAR ════════════════════════════════════════════ -->
@@ -223,7 +238,6 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Admin');
                         <canvas id="dailyTrendChart"></canvas>
                     </div>
                 </div>
-
             </div>
 
             <!-- ══ HEATMAP ════════════════════════════════════════════════ -->
@@ -291,6 +305,22 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Admin');
                     </div>
                 </div>
 
+            </div>
+
+            <!-- ══ XGBOOST FEATURE IMPORTANCE PANEL ══════════════════════ -->
+            <div class="chart-card full" style="margin-bottom:16px;">
+                <div class="chart-card-header" id="xgbPanelToggle" style="cursor:pointer;" onclick="document.getElementById('xgbPanelBody').classList.toggle('hidden')">
+                    <div class="chart-card-title">
+                        <i class="fa-solid fa-sitemap"></i>
+                        XGBoost Feature Importance
+                        <span style="font-size:11px;color:var(--ink-4);font-weight:400;">— top drivers of revenue</span>
+                    </div>
+                    <span class="chart-card-badge">▾ Expand</span>
+                </div>
+                <div id="xgbPanelBody" class="hidden" style="padding:12px 0 4px;">
+                    <div id="xgbFeatureBars" style="display:flex;flex-direction:column;gap:10px;max-width:520px;"></div>
+                    <p id="xgbEmptyMsg" style="font-size:12px;color:var(--ink-4);display:none;">No data yet — apply filters to score.</p>
+                </div>
             </div>
 
             <!-- ══ TOP 10 CUSTOMERS TABLE ═════════════════════════════════ -->

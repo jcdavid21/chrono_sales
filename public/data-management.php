@@ -281,14 +281,108 @@ $user_role = $_SESSION['user_role'] ?? 'Admin';
         .import-drop.drag-over i { color: var(--primary); }
         .import-drop p { font-size: 13px; color: var(--ink-3); }
         .import-drop p strong { color: var(--primary); }
+
+        /* ── Import wizard steps ─────────────────────────────────── */
+        .import-steps {
+            display: flex; align-items: center; gap: 0;
+            margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 16px;
+        }
+        .import-step {
+            display: flex; align-items: center; gap: 8px;
+            flex: 1; font-size: 12px; font-weight: 600; color: var(--ink-4);
+        }
+        .import-step-num {
+            width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700; transition: all 0.2s; flex-shrink: 0;
+        }
+        .import-step.active { color: var(--primary); }
+        .import-step.active .import-step-num { border-color: var(--primary); background: var(--primary); color: #fff; }
+        .import-step.done { color: var(--ink-3); }
+        .import-step.done .import-step-num { border-color: var(--success); background: var(--success); color: #fff; }
+        .import-step-connector { flex: none; width: 24px; height: 1px; background: var(--border); margin: 0 4px; }
+
+        /* ── Validation banner ───────────────────────────────────── */
+        .import-validation {
+            display: none; border-radius: 10px; padding: 12px 14px;
+            margin-bottom: 14px; font-size: 12.5px; line-height: 1.5;
+        }
+        .import-validation.show { display: block; }
+        .import-validation.ok { background: #f0fdf4; border: 1px solid #86efac; color: #15803d; }
+        .import-validation.warn { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+        .import-validation.err { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
+        .import-validation ul { margin: 6px 0 0 16px; padding: 0; }
+        .import-validation li { margin-bottom: 3px; }
+        .import-validation strong { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+
+        /* ── Column mapping ──────────────────────────────────────── */
+        .col-map-grid {
+            display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px 12px;
+            align-items: center; font-size: 12.5px; max-height: 320px; overflow-y: auto;
+        }
+        .col-map-header { font-weight: 700; color: var(--ink-4); text-transform: uppercase;
+            font-size: 10px; letter-spacing: 0.08em; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+        .col-map-csv { font-family: 'DM Mono', monospace; font-size: 11.5px;
+            background: var(--bg); border: 1px solid var(--border);
+            padding: 5px 8px; border-radius: 6px; color: var(--ink-2); }
+        .col-map-arrow { color: var(--ink-4); font-size: 12px; text-align: center; }
+        .col-map-select {
+            padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border);
+            background: var(--card); font-size: 12px; color: var(--ink);
+            font-family: 'DM Sans', sans-serif; width: 100%;
+        }
+        .col-map-select.mapped { border-color: var(--primary-mid); background: var(--primary-light); color: var(--primary); }
+        .col-map-select.required-missing { border-color: var(--danger); background: #fef2f2; }
+
+        /* ── Import summary stats ────────────────────────────────── */
+        .import-stats {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+            margin-bottom: 14px;
+        }
+        .import-stat {
+            background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+            padding: 10px 12px; text-align: center;
+        }
+        .import-stat-num { font-size: 20px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--ink); }
+        .import-stat-num.ok  { color: var(--success); }
+        .import-stat-num.warn{ color: #f59e0b; }
+        .import-stat-num.err { color: var(--danger); }
+        .import-stat-label { font-size: 10px; color: var(--ink-4); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+        /* ── Preview table ───────────────────────────────────────── */
         .import-preview {
             background: var(--bg); border-radius: 8px; overflow: hidden;
-            border: 1px solid var(--border); max-height: 260px; overflow-y: auto;
+            border: 1px solid var(--border); max-height: 280px; overflow-y: auto;
         }
-        .import-preview table { width: 100%; font-size: 11.5px; border-collapse: collapse; }
-        .import-preview th { padding: 7px 10px; background: #f1f5f9; color: var(--ink-4); font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--border); }
-        .import-preview td { padding: 7px 10px; color: var(--ink-2); border-bottom: 1px solid #f8fafc; }
+        .import-preview table { width: 100%; font-size: 11.5px; border-collapse: collapse; min-width: 600px; }
+        .import-preview th { padding: 7px 10px; background: #f1f5f9; color: var(--ink-4); font-size: 10px;
+            text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; white-space: nowrap; }
+        .import-preview td { padding: 7px 10px; color: var(--ink-2); border-bottom: 1px solid #f8fafc; white-space: nowrap; }
         .import-preview tr:last-child td { border-bottom: none; }
+        .import-preview td.cell-err { background: #fef2f2; color: var(--danger); }
+        .import-preview td.cell-warn { background: #fffbeb; color: #92400e; }
+        .import-preview td.cell-ok { color: var(--success); font-weight: 600; }
+        .import-preview tr.row-skip { opacity: 0.45; }
+
+        /* ── Progress bar ─────────────────────────────────────────── */
+        .import-progress-wrap {
+            display: none; background: var(--bg); border: 1px solid var(--border);
+            border-radius: 10px; padding: 20px; text-align: center;
+        }
+        .import-progress-wrap.show { display: block; }
+        .import-progress-bar {
+            height: 8px; background: var(--border); border-radius: 99px;
+            overflow: hidden; margin: 12px 0;
+        }
+        .import-progress-fill {
+            height: 100%; background: linear-gradient(90deg, var(--primary-mid), var(--primary));
+            border-radius: 99px; transition: width 0.3s ease; width: 0%;
+        }
+        .import-progress-label { font-size: 12px; color: var(--ink-3); }
+
+        /* ── Modal extra-wide for import ─────────────────────────── */
+        .modal.import-modal { max-width: 900px; }
 
         /* ── Toast notification ──────────────────────────────────── */
         #toast-container {
@@ -432,7 +526,7 @@ $user_role = $_SESSION['user_role'] ?? 'Admin';
 
                 <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                     <button class="btn-secondary" onclick="openImportModal()">
-                        <i class="fa-solid fa-file-arrow-up"></i> Import CSV
+                        <i class="fa-solid fa-file-arrow-up"></i> Import CSV / XLSX
                     </button>
                     <button class="btn-secondary" onclick="exportCSV()">
                         <i class="fa-solid fa-file-arrow-down"></i> Export
@@ -511,36 +605,113 @@ $user_role = $_SESSION['user_role'] ?? 'Admin';
     </div>
 </div>
 
-<!-- Import Modal -->
+<!-- Import Modal — Enhanced CSV Wizard -->
 <div class="modal-overlay" id="importModalOverlay">
-    <div class="modal wide">
+    <div class="modal import-modal">
+
+        <!-- ── Header ── -->
         <div class="modal-header">
-            <div class="modal-title"><i class="fa-solid fa-file-csv"></i> Import CSV</div>
+            <div class="modal-title">
+                <i class="fa-solid fa-file-excel"></i>
+                <span id="importModalTitle">Import CSV</span>
+            </div>
             <button class="modal-close" onclick="closeImportModal()"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="modal-body">
-            <div class="import-drop" id="importDrop" onclick="document.getElementById('csvFileInput').click()">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
-                <p>Click or drag & drop your <strong>CSV file</strong> here</p>
-                <p style="font-size:11.5px;margin-top:6px;color:var(--ink-4);">First row must be column headers matching the table fields</p>
-            </div>
-            <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleCSVFile(event)">
-            <div id="importPreviewWrap" style="display:none;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                    <span style="font-size:12px;font-weight:600;color:var(--ink-2);" id="importPreviewLabel"></span>
-                    <button class="btn-secondary" style="padding:4px 10px;font-size:11.5px;" onclick="clearImport()">
-                        <i class="fa-solid fa-xmark"></i> Clear
-                    </button>
+
+        <!-- ── Step indicator ── -->
+        <div style="padding: 14px 22px 0;">
+            <div class="import-steps">
+                <div class="import-step active" id="stepIndicator1">
+                    <div class="import-step-num" id="stepNum1">1</div>
+                    <span>Upload</span>
                 </div>
-                <div class="import-preview" id="importPreview"></div>
+                <div class="import-step-connector"></div>
+                <div class="import-step" id="stepIndicator2">
+                    <div class="import-step-num" id="stepNum2">2</div>
+                    <span>Map Columns</span>
+                </div>
+                <div class="import-step-connector"></div>
+                <div class="import-step" id="stepIndicator3">
+                    <div class="import-step-num" id="stepNum3">3</div>
+                    <span>Validate</span>
+                </div>
+                <div class="import-step-connector"></div>
+                <div class="import-step" id="stepIndicator4">
+                    <div class="import-step-num" id="stepNum4">4</div>
+                    <span>Confirm</span>
+                </div>
             </div>
         </div>
+
+        <!-- ── Body ── -->
+        <div class="modal-body" id="importModalBody">
+
+            <!-- STEP 1: Upload -->
+            <div id="importStep1">
+                <div class="import-drop" id="importDrop" onclick="document.getElementById('csvFileInput').click()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <p>Click or drag &amp; drop your <strong>CSV file</strong> here</p>
+                    <p style="font-size:11.5px;margin-top:6px;color:var(--ink-4);">
+                        Accepted: .xlsx · .csv  ·  Max 20 MB  ·  Sales Report format (multi-sheet XLSX or single CSV)
+                    </p>
+                </div>
+                <input type="file" id="csvFileInput" accept=".csv,.xlsx" style="display:none" onchange="handleSalesFile(event)">
+
+                <!-- Quick-ref: expected columns per tab -->
+                <div id="importColHints" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink-3);">
+                    <strong style="color:var(--ink-2);display:block;margin-bottom:6px;">
+                        <i class="fa-solid fa-circle-info" style="color:var(--primary-mid);margin-right:6px;"></i>Expected columns for the current tab
+                    </strong>
+                    <span id="importColHintText" style="font-family:'DM Mono',monospace;font-size:11px;"></span>
+                </div>
+            </div>
+
+            <!-- STEP 2: Sheet Preview -->
+            <div id="importStep2" style="display:none;">
+                <div id="sheetPreviewContainer"></div>
+            </div>
+
+            <!-- STEP 3: Validate & Preview -->
+            <div id="importStep3" style="display:none;">
+                <div class="import-stats" id="importStats"></div>
+                <div class="import-validation" id="importValidation"></div>
+                <div id="importPreviewWrap">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                        <span style="font-size:12px;font-weight:600;color:var(--ink-2);" id="importPreviewLabel"></span>
+                        <span style="font-size:11.5px;color:var(--ink-4);">Showing first 20 rows</span>
+                    </div>
+                    <div class="import-preview" id="importPreview"></div>
+                </div>
+            </div>
+
+            <!-- STEP 4: Confirm -->
+            <div id="importStep4" style="display:none;">
+                <div id="importConfirmSummary" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:16px;"></div>
+                <div class="import-progress-wrap" id="importProgressWrap">
+                    <div style="font-size:13px;font-weight:600;color:var(--ink-2);" id="importProgressTitle">Importing records…</div>
+                    <div class="import-progress-bar">
+                        <div class="import-progress-fill" id="importProgressFill"></div>
+                    </div>
+                    <div class="import-progress-label" id="importProgressLabel">Preparing…</div>
+                </div>
+            </div>
+
+        </div><!-- /.modal-body -->
+
+        <!-- ── Footer ── -->
         <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeImportModal()">Cancel</button>
-            <button class="btn-primary" id="importSubmitBtn" disabled onclick="submitImport()">
-                <i class="fa-solid fa-file-import"></i> Import Records
+            <button class="btn-secondary" id="importCancelBtn" onclick="closeImportModal()">Cancel</button>
+            <button class="btn-secondary" id="importBackBtn" style="display:none;" onclick="importGoBack()">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+            <button class="btn-primary" id="importNextBtn" disabled onclick="importGoNext()">
+                Next <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            <button class="btn-primary" id="importSubmitBtn" style="display:none;" onclick="submitImport()">
+                <i class="fa-solid fa-file-import"></i> Confirm &amp; Import
             </button>
         </div>
+
     </div>
 </div>
 
@@ -1175,80 +1346,693 @@ function exportCSV() {
     window.open(`${API}?endpoint=${cfg.endpoint}/export&${params}`, '_blank');
 }
 
-/* ── CSV Import ───────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════
+   CSV IMPORT — ENHANCED WIZARD (4 steps)
+   Step 1: Upload  →  Step 2: Map Columns  →  Step 3: Validate  →  Step 4: Confirm
+════════════════════════════════════════════════════════════ */
+
+/* ── Schema definitions per table tab ─────────────────────── */
+const IMPORT_SCHEMA = {
+    transactions: {
+        title: 'Transactions',
+        fields: [
+            { key: 'invoice_number',           label: 'Invoice Number',    required: false, type: 'string'  },
+            { key: 'transaction_date',          label: 'Transaction Date',  required: true,  type: 'date'    },
+            { key: 'customer_id',               label: 'Customer ID',       required: false, type: 'int'     },
+            { key: 'branch_id',                 label: 'Branch ID',         required: true,  type: 'int'     },
+            { key: 'discount_type_id',          label: 'Discount Type ID',  required: false, type: 'int',    validValues: [1,2] },
+            { key: 'discount_value',            label: 'Discount Value',    required: false, type: 'decimal' },
+            { key: 'total_treatment',           label: 'Total Treatment',   required: false, type: 'decimal' },
+            { key: 'total_product',             label: 'Total Product',     required: false, type: 'decimal' },
+            { key: 'final_discount',            label: 'Final Discount',    required: false, type: 'decimal' },
+            { key: 'vat',                       label: 'VAT',               required: false, type: 'decimal' },
+            { key: 'grand_total',               label: 'Grand Total',       required: true,  type: 'decimal' },
+            { key: 'overall_payment_method_id', label: 'Payment Method ID', required: false, type: 'int'     },
+            { key: 'transaction_status',        label: 'Status',            required: false, type: 'string', validValues: ['OK','VOID','PENDING'] },
+        ],
+    },
+    customers: {
+        title: 'Customers',
+        fields: [
+            { key: 'full_name', label: 'Full Name', required: true,  type: 'string' },
+            { key: 'contact',   label: 'Contact',   required: false, type: 'string' },
+            { key: 'address',   label: 'Address',   required: false, type: 'string' },
+        ],
+    },
+    branches: {
+        title: 'Branches',
+        fields: [
+            { key: 'branch_name', label: 'Branch Name', required: true,  type: 'string' },
+            { key: 'city',        label: 'City',         required: false, type: 'string' },
+            { key: 'region',      label: 'Region',       required: false, type: 'string' },
+            { key: 'is_active',   label: 'Is Active',    required: false, type: 'int', validValues: [0,1] },
+        ],
+    },
+};
+
+/* ── Import wizard state ──────────────────────────────────── */
+const imp = {
+    step:        1,          // current wizard step 1-4
+    csvHeaders:  [],         // raw column headers from file (legacy csv path)
+    csvRows:     [],         // all parsed raw rows (legacy csv path)
+    fileName:    '',
+    fileObject:  null,       // File object kept for multipart upload
+    isXlsx:      false,
+    previewData: null,       // response from /api/dm/dataset/preview
+    mapping:     {},         // csvCol → dbField key  (or '__skip__')
+    validated:   [],         // [{row, errors:[], warnings:[], mapped:{}}]
+    readyRows:   [],         // rows that pass validation (after mapping)
+    skipCount:   0,
+    errCount:    0,
+    warnCount:   0,
+};
+
+/* ── Utility: parse CSV text properly (handles quoted commas) ─ */
+function parseCSVText(text) {
+    const lines = [];
+    const re = /("(?:[^"]|"")*"|[^,\n\r]*)(,|\r?\n|\r|$)/g;
+    let row = [], match;
+    while ((match = re.exec(text)) !== null) {
+        let val = match[1];
+        if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1,-1).replace(/""/g,'"');
+        row.push(val.trim());
+        if (match[2] !== ',') {
+            if (row.some(v => v !== '') || lines.length === 0) lines.push(row);
+            row = [];
+            if (match[2] === '') break;
+        }
+    }
+    return lines;
+}
+
+/* ── Step indicator helper ────────────────────────────────── */
+function setImportStep(n) {
+    imp.step = n;
+    for (let i = 1; i <= 4; i++) {
+        const si = document.getElementById(`stepIndicator${i}`);
+        const sn = document.getElementById(`stepNum${i}`);
+        si.classList.remove('active','done');
+        if (i < n)      { si.classList.add('done');   sn.innerHTML = '<i class="fa-solid fa-check" style="font-size:10px;"></i>'; }
+        else if (i === n) si.classList.add('active');
+        // restore numbers for forward steps
+        if (i > n) sn.textContent = i;
+        document.getElementById(`importStep${i}`).style.display = (i === n) ? '' : 'none';
+    }
+    // footer button visibility
+    const nextBtn   = document.getElementById('importNextBtn');
+    const backBtn   = document.getElementById('importBackBtn');
+    const submitBtn = document.getElementById('importSubmitBtn');
+    backBtn.style.display   = n > 1 && n < 4 ? '' : 'none';
+    nextBtn.style.display   = n < 4 ? '' : 'none';
+    submitBtn.style.display = n === 4 ? '' : 'none';
+    // Steps 2+ enable nextBtn themselves after building content
+    if (n === 1) nextBtn.disabled = true;
+    document.getElementById('importModalTitle').textContent =
+        ['', 'Import Sales Report — Upload', 'Import Sales Report — Preview',
+         'Import Sales Report — Validate', 'Import Sales Report — Confirm & Import'][n];
+}
+
+/* ── Open / close ─────────────────────────────────────────── */
 function openImportModal() {
-    clearImport();
+    resetImportWizard();
     document.getElementById('importModalOverlay').classList.add('open');
 }
-function closeImportModal() { document.getElementById('importModalOverlay').classList.remove('open'); }
+function closeImportModal() {
+    document.getElementById('importModalOverlay').classList.remove('open');
+}
+function resetImportWizard() {
+    Object.assign(imp, { step:1, csvHeaders:[], csvRows:[], fileName:'', fileObject:null, isXlsx:false, previewData:null, mapping:{}, validated:[], readyRows:[], skipCount:0, errCount:0, warnCount:0 });
+    document.getElementById('csvFileInput').value = '';
+    setImportStep(1);
+    // show column hint for current tab
+    const schema = IMPORT_SCHEMA[state.tab];
+    if (schema) {
+        const reqKeys = schema.fields.filter(f=>f.required).map(f=>f.key);
+        const optKeys = schema.fields.filter(f=>!f.required).map(f=>f.key);
+        document.getElementById('importColHintText').innerHTML =
+            `<span style="color:var(--danger);font-weight:600;">Required:</span> ${reqKeys.join(', ')}` +
+            (optKeys.length ? `<br><span style="color:var(--ink-4);">Optional:</span> ${optKeys.join(', ')}` : '');
+    }
+    document.getElementById('importNextBtn').disabled = true;
+}
 
-function handleCSVFile(e) {
+/* ── STEP 1: file chosen ──────────────────────────────────── */
+/* ── STEP 1: file chosen (xlsx or csv) ────────────────────── */
+function handleSalesFile(e) {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => parseCSVPreview(ev.target.result, file.name);
-    reader.readAsText(file);
-}
+    const fname = file.name.toLowerCase();
+    const isXlsx = fname.endsWith('.xlsx');
+    const isCsv  = fname.endsWith('.csv');
+    if (!isXlsx && !isCsv) return showToast('Only .xlsx or .csv files are accepted.', 'error');
+    if (file.size > 20 * 1024 * 1024) return showToast('File is too large (max 20 MB).', 'error');
 
-function parseCSVPreview(text, name) {
-    const lines  = text.split('\n').filter(l => l.trim());
-    if (lines.length < 2) return showToast('CSV must have at least a header row and one data row.', 'error');
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
-    const rows    = lines.slice(1, 11).map(l => l.split(',').map(v => v.trim().replace(/^"|"$/g,'')));
-    state.importRows = lines.slice(1).map(l => {
-        const vals = l.split(',').map(v => v.trim().replace(/^"|"$/g,''));
-        const obj  = {};
-        headers.forEach((h,i) => { obj[h] = vals[i] ?? ''; });
-        return obj;
-    });
-    document.getElementById('importPreviewLabel').textContent = `${name} — ${state.importRows.length} row(s) to import`;
-    document.getElementById('importPreview').innerHTML = `<table>
-        <thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-        <tbody>${rows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody>
-    </table>`;
-    document.getElementById('importPreviewWrap').style.display = 'block';
-    document.getElementById('importSubmitBtn').disabled = false;
-}
+    imp.fileName   = file.name;
+    imp.fileObject = file;          // keep reference for multipart upload
+    imp.isXlsx     = isXlsx;
 
-function clearImport() {
-    state.importRows = [];
-    document.getElementById('csvFileInput').value = '';
-    document.getElementById('importPreviewWrap').style.display = 'none';
-    document.getElementById('importSubmitBtn').disabled = true;
-}
+    // Show a loading state while we call /preview
+    document.getElementById('importDrop').innerHTML =
+        `<i class="fa-solid fa-spinner fa-spin" style="color:var(--primary);"></i>
+         <p><strong>${file.name}</strong></p>
+         <p style="font-size:11.5px;margin-top:4px;color:var(--ink-4);">Reading file…</p>`;
+    document.getElementById('importNextBtn').disabled = true;
 
-async function submitImport() {
-    if (!state.importRows.length) return;
-    const cfg = TABS[state.tab];
-    const btn = document.getElementById('importSubmitBtn');
-    btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Importing…';
-    try {
-        const r = await fetch(`${API}?endpoint=${cfg.endpoint}/import`, {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ rows: state.importRows }),
+    // Send to backend /preview endpoint — it handles both xlsx and csv
+    const fd = new FormData();
+    fd.append('file', file);
+    fetch(`${API}?endpoint=dm/dataset/preview`, { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                showToast('Preview failed: ' + data.error, 'error');
+                document.getElementById('importDrop').innerHTML =
+                    `<i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i>
+                     <p style="color:var(--danger);">${data.error}</p>
+                     <p style="font-size:11.5px;margin-top:4px;color:var(--primary);cursor:pointer;" onclick="document.getElementById('csvFileInput').click()">Click to choose another file</p>`;
+                return;
+            }
+            // Store preview data — used to display sheet tabs in step 2
+            imp.previewData = data;   // { sheets:[{name,columns,total_rows,preview}], total_rows, file_type }
+
+            const totalRows = data.total_rows;
+            const sheetSummary = data.sheets.length > 1
+                ? `${data.sheets.length} sheets · ${totalRows.toLocaleString()} total rows`
+                : `${totalRows.toLocaleString()} rows · ${data.sheets[0]?.columns?.length || 0} columns`;
+
+            document.getElementById('importDrop').innerHTML =
+                `<i class="fa-solid fa-file-circle-check" style="color:var(--success);"></i>
+                 <p><strong>${file.name}</strong></p>
+                 <p style="font-size:11.5px;margin-top:4px;color:var(--ink-4);">${sheetSummary}</p>
+                 <p style="font-size:11.5px;margin-top:4px;color:var(--primary);cursor:pointer;" onclick="document.getElementById('csvFileInput').click()">Click to replace file</p>`;
+            document.getElementById('importNextBtn').disabled = false;
+        })
+        .catch(err => {
+            showToast('Could not reach server: ' + err.message, 'error');
+            document.getElementById('importDrop').innerHTML =
+                `<i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i>
+                 <p style="color:var(--danger);">Server error. Try again.</p>`;
         });
-        const res = await r.json();
-        if (!r.ok) throw new Error(res.error || 'Import failed');
-        showToast(`Imported ${res.inserted} record(s) successfully.`, 'success');
-        closeImportModal();
-        await loadData();
-    } catch(e) {
-        showToast('Import error: ' + e.message, 'error');
-    } finally {
-        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-file-import"></i> Import Records';
+}
+
+/* keep old name as alias so any stray references still work */
+function handleCSVFile(e) { handleSalesFile(e); }
+
+/* ── Drag & drop wiring (set up after DOM ready) ──────────── */
+document.addEventListener('DOMContentLoaded', () => {
+    const drop = document.getElementById('importDrop');
+    drop.addEventListener('dragover',  e => { e.preventDefault(); drop.classList.add('drag-over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+    drop.addEventListener('drop', e => {
+        e.preventDefault(); drop.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            const inp = document.getElementById('csvFileInput');
+            // Create a DataTransfer to set the files property
+            try {
+                const dt = new DataTransfer(); dt.items.add(file); inp.files = dt.files;
+            } catch(x) {}
+            handleSalesFile({ target: { files: [file] } });
+        }
+    });
+});
+
+/* ── STEP 2: build column mapping UI ─────────────────────── */
+function buildMappingStep() {
+    const schema = IMPORT_SCHEMA[state.tab];
+    if (!schema) { importGoNext(); return; } // no schema, skip
+    const grid = document.getElementById('colMapGrid');
+    // clear old rows (keep 3 header divs)
+    while (grid.children.length > 3) grid.removeChild(grid.lastChild);
+
+    // Auto-detect mapping by normalising names
+    const normalise = s => s.toLowerCase().replace(/[\s\-_]+/g,'');
+    const fieldMap  = {};
+    schema.fields.forEach(f => { fieldMap[normalise(f.key)] = f.key; fieldMap[normalise(f.label)] = f.key; });
+
+    imp.csvHeaders.forEach(csvCol => {
+        const norm    = normalise(csvCol);
+        const autoKey = fieldMap[norm] || '__skip__';
+        imp.mapping[csvCol] = autoKey;
+
+        // CSV col label
+        const divCol = document.createElement('div');
+        divCol.className = 'col-map-csv';
+        divCol.textContent = csvCol;
+
+        // Arrow
+        const divArr = document.createElement('div');
+        divArr.className = 'col-map-arrow';
+        divArr.innerHTML = '<i class="fa-solid fa-arrow-right"></i>';
+
+        // Select
+        const sel = document.createElement('select');
+        sel.className = 'col-map-select' + (autoKey !== '__skip__' ? ' mapped' : '');
+        sel.dataset.csvCol = csvCol;
+        const skipOpt = document.createElement('option');
+        skipOpt.value = '__skip__'; skipOpt.textContent = '— skip —';
+        sel.appendChild(skipOpt);
+        schema.fields.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f.key;
+            opt.textContent = `${f.label}${f.required ? ' *' : ''}`;
+            sel.appendChild(opt);
+        });
+        sel.value = autoKey;
+        sel.addEventListener('change', () => {
+            imp.mapping[csvCol] = sel.value;
+            sel.className = 'col-map-select' + (sel.value !== '__skip__' ? ' mapped' : '');
+            checkMappingRequirements();
+        });
+
+        grid.appendChild(divCol);
+        grid.appendChild(divArr);
+        grid.appendChild(sel);
+    });
+    checkMappingRequirements();
+}
+
+function checkMappingRequirements() {
+    const schema = IMPORT_SCHEMA[state.tab];
+    if (!schema) return;
+    const mappedDbFields = Object.values(imp.mapping);
+    const missingRequired = schema.fields.filter(f => f.required && !mappedDbFields.includes(f.key));
+
+    // highlight missing required selects
+    document.querySelectorAll('.col-map-select').forEach(sel => {
+        sel.classList.remove('required-missing');
+    });
+
+    const nextBtn = document.getElementById('importNextBtn');
+    if (missingRequired.length) {
+        nextBtn.disabled = true;
+        nextBtn.title = 'Map required fields: ' + missingRequired.map(f=>f.label).join(', ');
+    } else {
+        nextBtn.disabled = false;
+        nextBtn.title = '';
     }
 }
 
-// Drag & drop for import
-const importDrop = document.getElementById('importDrop');
-importDrop.addEventListener('dragover',  e => { e.preventDefault(); importDrop.classList.add('drag-over'); });
-importDrop.addEventListener('dragleave', () => importDrop.classList.remove('drag-over'));
-importDrop.addEventListener('drop', e => {
-    e.preventDefault(); importDrop.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) { const r = new FileReader(); r.onload = ev => parseCSVPreview(ev.target.result, file.name); r.readAsText(file); }
-});
+/* ── STEP 3: validate all rows ────────────────────────────── */
+function validateRows() {
+    const schema = IMPORT_SCHEMA[state.tab];
+    if (!schema) return;
+    const fieldDef = {};
+    schema.fields.forEach(f => { fieldDef[f.key] = f; });
+
+    imp.validated = [];
+    imp.skipCount = 0; imp.errCount = 0; imp.warnCount = 0;
+
+    imp.csvRows.forEach((rawRow, idx) => {
+        // build mapped object
+        const mapped = {};
+        imp.csvHeaders.forEach((h, i) => {
+            const dbKey = imp.mapping[h];
+            if (dbKey && dbKey !== '__skip__') mapped[dbKey] = (rawRow[i] ?? '').trim();
+        });
+
+        const errors = [];
+        const warnings = [];
+
+        schema.fields.forEach(f => {
+            const val = mapped[f.key];
+            const isEmpty = val === undefined || val === '' || val === null;
+
+            if (f.required && isEmpty) {
+                errors.push(`"${f.label}" is required`);
+                return;
+            }
+            if (isEmpty) return; // optional empty → OK
+
+            // type checks
+            if (f.type === 'int') {
+                if (!/^-?\d+$/.test(val)) errors.push(`"${f.label}" must be an integer (got "${val}")`);
+                else if (f.validValues && !f.validValues.includes(parseInt(val)))
+                    warnings.push(`"${f.label}" unexpected value ${val} (expected ${f.validValues.join('/')})`);
+            } else if (f.type === 'decimal') {
+                if (!/^-?\d+(\.\d+)?$/.test(val)) errors.push(`"${f.label}" must be a number (got "${val}")`);
+                else if (parseFloat(val) < 0) warnings.push(`"${f.label}" is negative (${val})`);
+            } else if (f.type === 'date') {
+                const d = new Date(val);
+                if (isNaN(d.getTime())) errors.push(`"${f.label}" is not a valid date (got "${val}")`);
+            } else if (f.type === 'string') {
+                if (f.validValues && !f.validValues.includes(val))
+                    warnings.push(`"${f.label}" unrecognised value "${val}"`);
+            }
+        });
+
+        // normalise types in mapped obj for final submit
+        schema.fields.forEach(f => {
+            if (mapped[f.key] === undefined || mapped[f.key] === '') return;
+            if (f.type === 'int')     mapped[f.key] = parseInt(mapped[f.key]);
+            if (f.type === 'decimal') mapped[f.key] = parseFloat(mapped[f.key]);
+        });
+
+        imp.validated.push({ rowNum: idx + 2, raw: rawRow, mapped, errors, warnings });
+        if (errors.length)   imp.errCount++;
+        else if (warnings.length) imp.warnCount++;
+    });
+
+    imp.readyRows = imp.validated.filter(v => v.errors.length === 0).map(v => v.mapped);
+    imp.skipCount = imp.errCount;
+}
+
+function buildValidationUI() {
+    validateRows();
+    const total = imp.validated.length;
+
+    // Stats bar
+    document.getElementById('importStats').innerHTML = `
+        <div class="import-stat"><div class="import-stat-num">${total.toLocaleString()}</div><div class="import-stat-label">Total Rows</div></div>
+        <div class="import-stat"><div class="import-stat-num ok">${imp.readyRows.length.toLocaleString()}</div><div class="import-stat-label">Ready</div></div>
+        <div class="import-stat"><div class="import-stat-num warn">${imp.warnCount.toLocaleString()}</div><div class="import-stat-label">Warnings</div></div>
+        <div class="import-stat"><div class="import-stat-num err">${imp.errCount.toLocaleString()}</div><div class="import-stat-label">Errors (skip)</div></div>
+    `;
+
+    // Validation banner
+    const vBanner = document.getElementById('importValidation');
+    vBanner.className = 'import-validation';
+    if (imp.errCount === 0 && imp.warnCount === 0) {
+        vBanner.className += ' show ok';
+        vBanner.innerHTML = `<strong><i class="fa-solid fa-circle-check"></i> All ${total} rows passed validation</strong>`;
+    } else if (imp.readyRows.length === 0) {
+        vBanner.className += ' show err';
+        const allErrs = imp.validated.flatMap(v=>v.errors.map(e=>`Row ${v.rowNum}: ${e}`)).slice(0,5);
+        vBanner.innerHTML = `<strong><i class="fa-solid fa-circle-xmark"></i> All rows have errors — cannot import</strong><ul>${allErrs.map(e=>`<li>${e}</li>`).join('')}${imp.errCount>5?`<li>…and ${imp.errCount-5} more</li>`:''}</ul>`;
+    } else {
+        vBanner.className += ' show warn';
+        const msgs = [];
+        if (imp.errCount)  msgs.push(`${imp.errCount} row(s) will be skipped due to errors`);
+        if (imp.warnCount) msgs.push(`${imp.warnCount} row(s) have warnings but will be imported`);
+        vBanner.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation"></i> ${imp.readyRows.length} of ${total} rows ready</strong><ul>${msgs.map(m=>`<li>${m}</li>`).join('')}</ul>`;
+    }
+
+    // Preview table (first 20 validated rows)
+    const schema     = IMPORT_SCHEMA[state.tab];
+    const mappedKeys = schema ? schema.fields.map(f=>f.key).filter(k => Object.values(imp.mapping).includes(k)) : [];
+    const previewRows = imp.validated.slice(0, 20);
+    let thead = `<tr><th>#</th><th>Status</th>${mappedKeys.map(k=>`<th>${k}</th>`).join('')}</tr>`;
+    let tbody = previewRows.map(v => {
+        const hasErr = v.errors.length > 0;
+        const hasWarn = v.warnings.length > 0;
+        const statusCell = hasErr
+            ? `<td class="cell-err"><i class="fa-solid fa-xmark"></i> Skip</td>`
+            : hasWarn
+                ? `<td class="cell-warn"><i class="fa-solid fa-triangle-exclamation"></i> Warn</td>`
+                : `<td class="cell-ok"><i class="fa-solid fa-check"></i> OK</td>`;
+        const cells = mappedKeys.map(k => {
+            const val = v.mapped[k] ?? '';
+            const def = schema?.fields.find(f=>f.key===k);
+            const isEmpty = val === '' || val === undefined;
+            const cls = (def?.required && isEmpty) ? 'cell-err' : '';
+            return `<td class="${cls}">${val !== undefined && val !== '' ? val : '<span style="color:var(--ink-4);">—</span>'}</td>`;
+        }).join('');
+        return `<tr class="${hasErr ? 'row-skip':''}"><td style="color:var(--ink-4);font-family:'DM Mono',monospace;font-size:10.5px;">${v.rowNum}</td>${statusCell}${cells}</tr>`;
+    }).join('');
+
+    document.getElementById('importPreviewLabel').textContent =
+        `${imp.fileName} — ${imp.readyRows.length} of ${total} rows will be imported`;
+    document.getElementById('importPreview').innerHTML =
+        `<table><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+
+    document.getElementById('importNextBtn').disabled = imp.readyRows.length === 0;
+}
+
+/* ── STEP 4: confirm summary ──────────────────────────────── */
+function buildConfirmStep() {
+    const schema = IMPORT_SCHEMA[state.tab] || { title: state.tab };
+    document.getElementById('importConfirmSummary').innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:var(--primary-light);
+                display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--primary);">
+                <i class="fa-solid fa-database"></i>
+            </div>
+            <div>
+                <div style="font-size:14px;font-weight:700;color:var(--ink);">Ready to import into <em>${schema.title}</em></div>
+                <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">This action will insert new records. Existing records are not affected.</div>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12.5px;">
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+                <div style="color:var(--ink-4);font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Source File</div>
+                <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-2);">${imp.fileName}</div>
+            </div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+                <div style="color:var(--ink-4);font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Records to Insert</div>
+                <div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:var(--primary);">${imp.readyRows.length.toLocaleString()}</div>
+            </div>
+            ${imp.errCount ? `<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;">
+                <div style="color:var(--danger);font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Rows Skipped (errors)</div>
+                <div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:var(--danger);">${imp.errCount.toLocaleString()}</div>
+            </div>` : ''}
+            ${imp.warnCount ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;">
+                <div style="color:#92400e;font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Rows with Warnings</div>
+                <div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:#f59e0b;">${imp.warnCount.toLocaleString()}</div>
+            </div>` : ''}
+        </div>
+    `;
+    document.getElementById('importSubmitBtn').disabled = false;
+}
+
+/* ── Wizard navigation ────────────────────────────────────── */
+function importGoNext() {
+    if (imp.step === 1) {
+        if (!imp.previewData) return showToast('Please upload a file first.', 'error');
+        buildSheetPreviewStep();
+        setImportStep(2);
+    } else if (imp.step === 2) {
+        buildDatasetConfirmStep();
+        setImportStep(3);
+    } else if (imp.step === 3) {
+        buildDatasetFinalStep();
+        setImportStep(4);
+        document.getElementById('importSubmitBtn').disabled = false;
+    }
+}
+function importGoBack() {
+    if (imp.step === 4) { setImportStep(3); }
+    else if (imp.step > 1) { setImportStep(imp.step - 1); }
+    document.getElementById('importNextBtn').disabled = false;
+}
+
+/* ── Final submit ─────────────────────────────────────────── */
+/* ── Sheet preview step (step 2 for Sales Report) ─────────── */
+function buildSheetPreviewStep() {
+    const data = imp.previewData;
+    if (!data) return;
+
+    // Render into the dedicated container inside step2
+    const container = document.getElementById('sheetPreviewContainer');
+
+    // ── Header summary ────────────────────────────────────────
+    let html = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;color:var(--ink);">
+            ${data.sheets.length} sheet(s) · ${data.total_rows.toLocaleString()} total rows
+        </div>
+        <div style="font-size:11px;color:var(--ink-4);">Click a sheet tab to preview its rows</div>
+    </div>`;
+
+    // ── Clickable sheet tabs ───────────────────────────────────
+    html += `<div id="sheetTabBar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:10px;">`;
+    data.sheets.forEach((sh, i) => {
+        const isActive = i === 0;
+        html += `
+        <button onclick="switchPreviewSheet(${i})" id="sheetTab_${i}"
+            style="padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;
+                   border:1.5px solid ${isActive ? 'var(--primary)' : 'var(--border)'};
+                   background:${isActive ? 'var(--primary)' : 'var(--card)'};
+                   color:${isActive ? '#fff' : 'var(--ink-2)'};
+                   transition:all .15s;">
+            ${sh.name}
+            <span style="font-weight:400;font-size:11px;margin-left:6px;
+                         opacity:${isActive ? '.85' : '.6'};">
+                ${sh.total_rows.toLocaleString()} rows
+            </span>
+        </button>`;
+    });
+    html += `</div>`;
+
+    // ── Preview table for first sheet ─────────────────────────
+    html += `<div id="sheetPreviewTable"></div>`;
+
+    container.innerHTML = html;
+
+    // Render the first sheet's table
+    renderSheetPreviewTable(0);
+
+    document.getElementById('importNextBtn').disabled = false;
+}
+
+function switchPreviewSheet(idx) {
+    const data = imp.previewData;
+    if (!data) return;
+
+    // Update tab button styles
+    data.sheets.forEach((_, i) => {
+        const btn = document.getElementById(`sheetTab_${i}`);
+        if (!btn) return;
+        const active = i === idx;
+        btn.style.border      = `1.5px solid ${active ? 'var(--primary)' : 'var(--border)'}`;
+        btn.style.background  = active ? 'var(--primary)' : 'var(--card)';
+        btn.style.color       = active ? '#fff' : 'var(--ink-2)';
+    });
+
+    renderSheetPreviewTable(idx);
+}
+
+function renderSheetPreviewTable(idx) {
+    const data = imp.previewData;
+    const sh   = data.sheets[idx];
+    const wrap = document.getElementById('sheetPreviewTable');
+    if (!sh || !wrap) return;
+
+    if (!sh.preview || sh.preview.length === 0) {
+        wrap.innerHTML = `<div style="color:var(--ink-4);font-size:12px;padding:20px 0;text-align:center;">No preview rows available for this sheet.</div>`;
+        return;
+    }
+
+    let html = `
+    <div style="font-size:10px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.06em;
+                font-weight:600;margin-bottom:6px;">
+        ${sh.name} — first ${sh.preview.length} of ${sh.total_rows.toLocaleString()} rows
+    </div>
+    <div class="import-preview" style="max-height:260px;overflow:auto;">
+    <table><thead><tr>`;
+    sh.columns.forEach(c => { html += `<th style="white-space:nowrap;">${c}</th>`; });
+    html += `</tr></thead><tbody>`;
+    sh.preview.forEach(row => {
+        html += '<tr>';
+        sh.columns.forEach(c => {
+            const v = row[c] ?? '';
+            html += `<td>${v !== '' ? v : '<span style="color:var(--ink-4)">—</span>'}</td>`;
+        });
+        html += '</tr>';
+    });
+    html += `</tbody></table></div>`;
+    wrap.innerHTML = html;
+}
+
+/* ── Dataset confirm step (step 3) ────────────────────────── */
+function buildDatasetConfirmStep() {
+    const data  = imp.previewData;
+    const step3 = document.getElementById('importStep3');
+    const sheetRows = data.sheets.map(sh =>
+        `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px;">
+            <span style="color:var(--ink-2);">${sh.name}</span>
+            <span style="font-family:'DM Mono',monospace;color:var(--ink);">${sh.total_rows.toLocaleString()} rows</span>
+         </div>`
+    ).join('');
+
+    step3.innerHTML = `
+        <div class="import-stats" style="margin-bottom:14px;">
+            <div class="import-stat"><div class="import-stat-num">${data.total_rows.toLocaleString()}</div><div class="import-stat-label">Total Rows</div></div>
+            <div class="import-stat"><div class="import-stat-num">${data.sheets.length}</div><div class="import-stat-label">Sheets</div></div>
+        </div>
+        <div class="import-validation show ok" style="margin-bottom:12px;">
+            <strong><i class="fa-solid fa-circle-check"></i> File validated — ready to import into the database</strong>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
+            <div style="font-size:10px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;font-weight:600;">Sheets to be imported</div>
+            ${sheetRows}
+        </div>`;
+    document.getElementById('importNextBtn').disabled = false;
+}
+
+/* ── Build step 4 confirm for dataset import ─────────────── */
+function buildDatasetFinalStep() {
+    const data = imp.previewData;
+    document.getElementById('importConfirmSummary').innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:var(--primary-light);
+                display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--primary);">
+                <i class="fa-solid fa-database"></i>
+            </div>
+            <div>
+                <div style="font-size:14px;font-weight:700;color:var(--ink);">Ready to import <em>${imp.fileName}</em></div>
+                <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">
+                    ${data.total_rows.toLocaleString()} rows across ${data.sheets.length} sheet(s) will be inserted.
+                    Duplicate invoices are automatically skipped.
+                </div>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12.5px;">
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+                <div style="color:var(--ink-4);font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Source File</div>
+                <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-2);">${imp.fileName}</div>
+            </div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+                <div style="color:var(--ink-4);font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Records to Process</div>
+                <div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:var(--primary);">${data.total_rows.toLocaleString()}</div>
+            </div>
+        </div>`;
+    document.getElementById('importSubmitBtn').disabled = false;
+}
+
+async function submitImport() {
+    if (!imp.fileObject) return showToast('No file selected.', 'error');
+    const btn = document.getElementById('importSubmitBtn');
+    btn.disabled = true;
+    document.getElementById('importBackBtn').style.display = 'none';
+    document.getElementById('importCancelBtn').style.display = 'none';
+
+    const wrap = document.getElementById('importProgressWrap');
+    const fill = document.getElementById('importProgressFill');
+    const lbl  = document.getElementById('importProgressLabel');
+    wrap.classList.add('show');
+    document.getElementById('importConfirmSummary').style.opacity = '0.4';
+
+    fill.style.width = '10%';
+    lbl.textContent  = 'Uploading file and inserting records…';
+
+    try {
+        const fd = new FormData();
+        fd.append('file', imp.fileObject);
+
+        const r   = await fetch(`${API}?endpoint=dm/dataset/import`, { method: 'POST', body: fd });
+        const res = await r.json();
+
+        if (!r.ok) throw new Error(res.error || 'Server error');
+
+        fill.style.width = '100%';
+        const inserted = res.inserted ?? 0;
+        const skipped  = res.skipped  ?? 0;
+        lbl.textContent = `Done — ${inserted.toLocaleString()} inserted${skipped ? ', ' + skipped.toLocaleString() + ' skipped' : ''}.`;
+
+        // Show per-sheet breakdown if available
+        if (res.by_sheet && res.by_sheet.length > 1) {
+            const breakdown = res.by_sheet.map(s =>
+                `${s.name}: ${s.inserted} inserted${s.skipped ? ', '+s.skipped+' skipped':''}`
+            ).join(' · ');
+            lbl.textContent += '  |  ' + breakdown;
+        }
+
+        // Show any row-level errors below the bar
+        if (res.errors && res.errors.length) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'margin-top:8px;font-size:11px;color:var(--danger);max-height:80px;overflow-y:auto;';
+            errDiv.innerHTML = res.errors.slice(0, 10).map(e => `<div>⚠ ${e}</div>`).join('');
+            wrap.appendChild(errDiv);
+        }
+
+        setTimeout(async () => {
+            closeImportModal();
+            if (inserted > 0) {
+                showToast(`Imported ${inserted.toLocaleString()} record(s) successfully.`, 'success');
+                await loadData();
+            } else {
+                showToast('Import finished but no records were inserted. Check errors.', 'error');
+            }
+        }, 1200);
+
+    } catch(e) {
+        fill.style.width = '100%';
+        fill.style.background = 'var(--danger)';
+        lbl.textContent = 'Import failed: ' + e.message;
+        btn.disabled = false;
+        console.error('Dataset import error:', e);
+    }
+}
 
 /* ── Toast ────────────────────────────────────────────────── */
 function showToast(msg, type='info') {

@@ -3,7 +3,9 @@
 const API_BASE   = '../backend/api_proxy.php';
 const ANALYTICS_EP = '../backend/api_proxy.php?endpoint=analytics';
 const FILTERS_EP   = '../backend/api_proxy.php?endpoint=analytics/filters';
-const CSV_EP       = '../backend/api_proxy.php?endpoint=analytics/export/csv';
+const CSV_EP        = '../backend/api_proxy.php?endpoint=analytics/export/csv';
+const LSTM_EP        = '../backend/api_proxy.php?endpoint=analytics-lstm-forecast';
+const DISCOUNT_ML_EP = '../backend/api_proxy.php?endpoint=analytics-discount-impact';
 const CURRENCY   = '₱';
 
 // ── Palette (matches dashboard CSS vars) ──────────────────────
@@ -30,7 +32,9 @@ let _filters = {
     payment_id:  'all',
     discount_id: 'all',
     status:      'OK',
+    ci:          '80',
 };
+let _mlDiscountScores = {};   // keyed by discount_name
 
 // ── Utilities ─────────────────────────────────────────────────
 const fmt    = n => CURRENCY + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -130,6 +134,26 @@ function renderAll(data) {
     renderTopCustomers(data.top_customers);
     renderDailyTrend(data.daily_trend);
     updateDateRangeLabel(data.date_range);
+    fetchAndRenderML(data);   // fire ML overlays async
+}
+
+async function fetchAndRenderML(analyticsData) {
+    const qs = buildQueryString({ ci: _filters.ci });
+    try {
+        const [lstmRes, discRes] = await Promise.all([
+            fetch(`${LSTM_EP}&${qs}`).then(r => r.json()),
+            fetch(`${DISCOUNT_ML_EP}&${qs}`).then(r => r.json()),
+        ]);
+        if (lstmRes.available) appendLSTMProjections(lstmRes, analyticsData.daily_trend);
+        if (discRes.available) {
+            _mlDiscountScores = Object.fromEntries(discRes.scores.map(s => [s.discount_name, s]));
+            renderDiscountAnalysis(analyticsData.discount_analysis);   // re-render with impact bars
+            renderXGBFeatureImportance(discRes.feature_importance);
+            renderMLInsight(lstmRes, discRes);
+        }
+    } catch (e) {
+        console.warn('ML overlay fetch failed:', e);
+    }
 }
 
 // ── Summary Metric Cards ──────────────────────────────────────
@@ -262,9 +286,14 @@ function renderDailyTrend(trend) {
                 },
                 tooltip: {
                     callbacks: {
-                        label: ctx => ctx.datasetIndex === 0
-                            ? 'Revenue: ' + fmtK(ctx.raw)
-                            : 'Txns: ' + ctx.raw.toLocaleString(),
+                        label: ctx => {
+                            if (ctx.raw === null || ctx.raw === undefined) return null;
+                            if (ctx.datasetIndex === 0) return 'Revenue: ' + fmtK(ctx.raw);
+                            if (ctx.datasetIndex === 1) return 'Txns: ' + ctx.raw.toLocaleString();
+                            if (ctx.dataset.label === 'LSTM Projection') return 'Forecast: ' + fmtK(ctx.raw);
+                            if (ctx.dataset.label?.startsWith('CI')) return ctx.dataset.label + ': ' + fmtK(ctx.raw);
+                            return null; // hide CI band entries from tooltip
+                        }
                     }
                 }
             },
@@ -480,6 +509,7 @@ function initApplyFilter() {
         _filters.branch_id   = document.getElementById('filterBranch')?.value   || 'all';
         _filters.payment_id  = document.getElementById('filterPayment')?.value  || 'all';
         _filters.discount_id = document.getElementById('filterDiscount')?.value || 'all';
+        _filters.ci          = document.getElementById('forecastCI')?.value      || '80';
 
         if (_filters.preset === 'custom') {
             _filters.date_from = document.getElementById('dateFrom')?.value || '';
@@ -601,6 +631,186 @@ function escHtml(str) {
     return String(str ?? '').replace(/[&<>"']/g, c => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
+}
+
+// ── LSTM: append projected bars to Daily Trend chart ─────────
+function appendLSTMProjections(lstm, existingTrend) {
+    if (!trendChart || !lstm.projections?.length) return;
+
+    const projLabels = lstm.projections.map(p => {
+        const dt = new Date(p.date);
+        return dt.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+    });
+    const projValues = lstm.projections.map(p => p.predicted);
+    const ciLowers   = lstm.projections.map(p => p.ci_lower);
+    const ciUppers   = lstm.projections.map(p => p.ci_upper);
+
+    // Extend chart labels
+    const allLabels = [...trendChart.data.labels, ...projLabels];
+    const actualLen = trendChart.data.datasets[0].data.length;
+    const nullPad   = Array(actualLen).fill(null);
+
+    trendChart.data.labels = allLabels;
+
+    // LSTM projected revenue dataset
+    trendChart.data.datasets.push({
+        label: 'LSTM Projection',
+        data:  [...nullPad, ...projValues],
+        borderColor: '#7c3aed',
+        backgroundColor: 'rgba(124,58,237,0.08)',
+        borderDash: [5, 4],
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: '#7c3aed',
+        fill: false,
+        tension: 0.4,
+        yAxisID: 'y',
+    });
+
+    // CI band upper
+    trendChart.data.datasets.push({
+        label: `CI Upper (${lstm.ci_level}%)`,
+        data:  [...nullPad, ...ciUppers],
+        borderColor: 'rgba(167,139,250,0.4)',
+        backgroundColor: 'rgba(167,139,250,0.12)',
+        borderWidth: 1,
+        pointRadius: 0,
+        fill: '+1',
+        tension: 0.4,
+        yAxisID: 'y',
+    });
+
+    // CI band lower
+    trendChart.data.datasets.push({
+        label: `CI Lower (${lstm.ci_level}%)`,
+        data:  [...nullPad, ...ciLowers],
+        borderColor: 'rgba(167,139,250,0.4)',
+        backgroundColor: 'rgba(167,139,250,0.12)',
+        borderWidth: 1,
+        pointRadius: 0,
+        fill: false,
+        tension: 0.4,
+        yAxisID: 'y',
+    });
+
+    trendChart.update();
+}
+
+// ── XGBoost Feature Importance mini-chart ─────────────────────
+function renderXGBFeatureImportance(features) {
+    const wrap = document.getElementById('xgbFeatureBars');
+    const empty = document.getElementById('xgbEmptyMsg');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    if (!features?.length) {
+        if (empty) empty.style.display = 'block';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+
+    const maxImp = Math.max(...features.map(f => f.importance));
+    features.forEach(f => {
+        const pct = maxImp > 0 ? (f.importance / maxImp * 100).toFixed(1) : 0;
+        const bar = document.createElement('div');
+        bar.style.cssText = 'display:flex;align-items:center;gap:10px;font-size:12px;';
+        bar.innerHTML = `
+            <span style="width:130px;color:var(--ink-2);font-family:'DM Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(f.feature)}">${escHtml(f.feature)}</span>
+            <div style="flex:1;background:#ede9fe;border-radius:4px;height:10px;overflow:hidden;">
+                <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:4px;transition:width .4s;"></div>
+            </div>
+            <span style="width:44px;text-align:right;font-family:'DM Mono',monospace;color:var(--ink-3);">${(f.importance * 100).toFixed(1)}%</span>
+        `;
+        wrap.appendChild(bar);
+    });
+}
+
+// ── Discount analysis — override to add impact bar column ─────
+const _origRenderDiscount = renderDiscountAnalysis;
+function renderDiscountAnalysis(discounts) {
+    const wrap = document.getElementById('discountCards');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    if (!discounts.length) {
+        wrap.innerHTML = '<p style="color:var(--ink-4);font-size:12px;">No discount data available.</p>';
+        return;
+    }
+
+    const maxRev = Math.max(...discounts.map(d => d.gross_revenue));
+
+    discounts.forEach(d => {
+        const pct = maxRev > 0 ? (d.gross_revenue / maxRev * 100) : 0;
+        const isNoDiscount = d.discount_type === 'No Discount' || d.discount_type === 'fixed';
+        const ml = _mlDiscountScores[d.discount_type];
+        const impNorm  = ml?.impact_normalized ?? null;
+        const impScore = ml?.impact_score      ?? null;
+
+        // Impact colour: green (low) → amber → red (high)
+        let impColor = '#6b7280';
+        let impLabel = '—';
+        if (impNorm !== null) {
+            impColor = impNorm < 0.33 ? '#16a34a' : impNorm < 0.67 ? '#d97706' : '#dc2626';
+            impLabel = (impNorm * 100).toFixed(0) + '%';
+        }
+
+        const row = document.createElement('div');
+        row.className = 'discount-row';
+        row.innerHTML = `
+            <div>
+                <div class="discount-type-label">${escHtml(d.discount_type)}</div>
+                <div style="font-size:10.5px;color:var(--ink-4);font-family:'DM Mono',monospace;margin-top:2px;">${d.tx_count.toLocaleString()} txns</div>
+            </div>
+            <div>
+                <div class="discount-bar-track">
+                    <div class="discount-bar-fill${isNoDiscount ? ' nodiscount' : ''}" style="width:${pct.toFixed(1)}%"></div>
+                </div>
+                <div style="font-size:10px;color:var(--ink-4);margin-top:3px;">
+                    Avg discount: <span style="font-family:'DM Mono',monospace;">${fmtK(d.avg_discount)}</span>
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                <div style="font-size:12.5px;font-weight:700;color:var(--ink-2);">${fmtK(d.gross_revenue)}</div>
+                <div style="font-size:10px;color:var(--ink-4);">Avg ticket: ${fmtK(d.avg_ticket)}</div>
+                ${impNorm !== null ? `
+                <div title="XGBoost impact score: ${impScore?.toFixed(3)}" style="display:flex;align-items:center;gap:5px;margin-top:2px;">
+                    <div style="width:60px;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;">
+                        <div style="width:${(impNorm*100).toFixed(0)}%;height:100%;background:${impColor};border-radius:3px;transition:width .4s;"></div>
+                    </div>
+                    <span style="font-size:10px;font-family:'DM Mono',monospace;color:${impColor};font-weight:600;">${impLabel}</span>
+                </div>` : ''}
+            </div>
+        `;
+        wrap.appendChild(row);
+    });
+}
+
+// ── Combined ML insight sentence ──────────────────────────────
+function renderMLInsight(lstm, disc) {
+    const block = document.getElementById('mlInsightBlock');
+    const text  = document.getElementById('mlInsightText');
+    if (!block || !text) return;
+
+    const parts = [];
+
+    if (lstm?.available && lstm.change_pct !== undefined) {
+        const dir = lstm.change_pct >= 0 ? 'increase' : 'decrease';
+        const mag = Math.abs(lstm.change_pct).toFixed(1);
+        const days = lstm.projections?.length ?? '?';
+        const branchNote = _filters.branch_id !== 'all' ? ` for the selected branch` : '';
+        parts.push(`LSTM projects a ${mag}% revenue ${dir} over the next ${days} days${branchNote}.`);
+    }
+
+    if (disc?.available && disc.scores?.length) {
+        const top = disc.scores[0];
+        const dir = top.impact_score > 0.4 ? 'significantly reducing' : 'mildly affecting';
+        parts.push(`XGBoost shows that discount type '${top.discount_name}' is ${dir} grand total variance most (impact score: ${top.impact_score.toFixed(2)}).`);
+    }
+
+    if (parts.length) {
+        text.textContent = parts.join(' ');
+        block.style.display = 'block';
+    }
 }
 
 // ── Init ──────────────────────────────────────────────────────

@@ -44,6 +44,10 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Admin');
 
             <div class="topbar-right">
                 <div class="topbar-date" id="topbarDate"></div>
+                <button class="topbar-btn ml-toggle-btn" id="mlToggleBtn" title="Toggle ML Insights">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span id="mlToggleLabel">ML ON</span>
+                </button>
                 <button class="topbar-btn" id="refreshBtn" title="Refresh data">
                     <i class="fa-solid fa-arrows-rotate"></i>
                 </button>
@@ -72,6 +76,24 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Admin');
                 </div>
                 <div class="alert-badge-wrap">
                     <span class="alert-ml-badge" id="alertMlBadge"></span>
+                </div>
+            </div>
+
+            <!-- Hybrid ML Alert card -->
+            <div class="hybrid-alert-card hidden" id="hybridAlertCard">
+                <div class="hybrid-alert-left">
+                    <span class="hybrid-model-badge" id="hybridModelBadge">Ensemble</span>
+                    <span class="hybrid-direction-icon" id="hybridDirectionIcon"></span>
+                    <div class="hybrid-alert-body">
+                        <p class="hybrid-alert-title" id="hybridAlertTitle">—</p>
+                        <p class="hybrid-alert-sub"   id="hybridAlertSub"></p>
+                    </div>
+                </div>
+                <div class="hybrid-alert-right">
+                    <span class="hybrid-confidence-badge" id="hybridConfidenceBadge">—</span>
+                    <a href="?page=analytics" class="hybrid-detail-link">
+                        View details <i class="fa-solid fa-arrow-right"></i>
+                    </a>
                 </div>
             </div>
 
@@ -155,6 +177,18 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Admin');
                     <div class="payment-legend" id="paymentLegend"></div>
                 </div>
 
+            </div>
+
+            <!-- Model Status mini-card -->
+            <div class="chart-card model-status-card hidden" id="modelStatusCard">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">
+                        <i class="fa-solid fa-microchip"></i>
+                        Model Status
+                    </div>
+                    <span class="shap-badge">Live</span>
+                </div>
+                <div class="model-status-grid" id="modelStatusGrid"></div>
             </div>
 
             <!-- Charts row 2 -->
